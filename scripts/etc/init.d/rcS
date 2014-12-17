@@ -299,7 +299,7 @@ if [ "$cdebootstrap_cmdline" = "" ]; then
     # Changed it so it is always installed.
     # Firmware can't be installed just yet, we'll do so at the end
     if [ "$kernel_module" = true ] ; then
-        cdebootstrap_cmdline="$cdebootstrap_cmdline,linux-image-rpi-rpfv"
+        cdebootstrap_cmdline="$cdebootstrap_cmdline,linux-image-3.10-3-rpi"
     fi
 
     case $preset in
@@ -595,7 +595,8 @@ echo "Configuring bootloader to start the installed system..."
 mv /rootfs/boot/config.txt /rootfs/boot/config-reinstall.txt
 
 # find kernel/initramfs version
-KERNEL_VERSION=$(sed -n -e '/^Package: linux-image-rpi-rpfv$/,/Package: /{s/^Depends: .*linux-image-\(.*-rpi\).*$/\1/p}' /rootfs/var/lib/dpkg/status)
+#KERNEL_VERSION=$(sed -n -e '/^Package: linux-image-rpi-rpfv$/,/Package: /{s/^Depends: .*linux-image-\(.*-rpi\).*$/\1/p}' /rootfs/var/lib/dpkg/status)
+KERNEL_VERSION=3.10-3-rpi
 echo "Kernel version: '${KERNEL_VERSION}'"
 
 # create a kernel upgrade handler script
