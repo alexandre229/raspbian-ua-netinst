@@ -23,6 +23,7 @@ online_config=
 usbroot=
 cmdline="dwc_otg.lpm_enable=0 console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 console=tty1 elevator=deadline"
 rootfstype=ext4
+kernel=rpfv
 
 # these shouldn't really be changed unless auto-detection fails
 bootdev=/dev/mmcblk0
@@ -299,7 +300,20 @@ if [ "$cdebootstrap_cmdline" = "" ]; then
     # Changed it so it is always installed.
     # Firmware can't be installed just yet, we'll do so at the end
     if [ "$kernel_module" = true ] ; then
-        cdebootstrap_cmdline="$cdebootstrap_cmdline,linux-image-3.10-3-rpi"
+        case $kernel in
+            rpfv)
+                # Latest kernel from Raspberry Pi Fondation
+                cdebootstrap_cmdline="$cdebootstrap_cmdline,linux-image-rpi-rpfv"
+                ;;
+            debian)
+                # Latest debian kernel from Raspbian
+                cdebootstrap_cmdline="$cdebootstrap_cmdline,linux-image-rpi"
+                ;;
+            *)
+                # Specific kernel
+                cdebootstrap_cmdline="$cdebootstrap_cmdline,linux-image-$kernel"
+                ;;
+        esac
     fi
 
     case $preset in
@@ -364,6 +378,7 @@ echo "  rootfstype = $rootfstype"
 echo "  rootfs_mkfs_options = $rootfs_mkfs_options"
 echo "  rootfs_install_mount_options = $rootfs_install_mount_options"
 echo "  rootfs_mount_options = $rootfs_mount_options"
+echo "  kernel = $kernel"
 echo
 
 echo -n "Waiting for $rootdev... "
@@ -595,8 +610,17 @@ echo "Configuring bootloader to start the installed system..."
 mv /rootfs/boot/config.txt /rootfs/boot/config-reinstall.txt
 
 # find kernel/initramfs version
-#KERNEL_VERSION=$(sed -n -e '/^Package: linux-image-rpi-rpfv$/,/Package: /{s/^Depends: .*linux-image-\(.*-rpi\).*$/\1/p}' /rootfs/var/lib/dpkg/status)
-KERNEL_VERSION=3.10-3-rpi
+case $kernel in
+    rpfv)
+        KERNEL_VERSION=$(sed -n -e '/^Package: linux-image-rpi-rpfv$/,/Package: /{s/^Depends: .*linux-image-\(.*-rpi\).*$/\1/p}' /rootfs/var/lib/dpkg/status)
+        ;;
+    debian)
+        KERNEL_VERSION=$(sed -n -e '/^Package: linux-image-rpi$/,/Package: /{s/^Depends: .*linux-image-\(.*-rpi\).*$/\1/p}' /rootfs/var/lib/dpkg/status)
+        ;;
+    *)
+        KERNEL_VERSION=$kernel
+        ;;
+esac
 echo "Kernel version: '${KERNEL_VERSION}'"
 
 # create a kernel upgrade handler script
